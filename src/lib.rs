@@ -29,8 +29,9 @@ fn str_to_unsigned_flat(s: &str) -> u8 {
 
     let mut result = 0u8;
     let mut multiply = 1u8;
-    for i in 0..=7 {
-        let position = 7 - i;
+    let len = s.len() - 1;
+    for i in 0..=len {
+        let position = len - i;
 
         match s[position] {
             '1' => {
@@ -43,6 +44,16 @@ fn str_to_unsigned_flat(s: &str) -> u8 {
     }
 
     result
+}
+
+fn str_to_signed_flat(s: &str) -> i8 {
+    let unsigned_part = str_to_unsigned_flat(&s[1..]);
+    let signed_part = match s.chars().next().unwrap() {
+        '0' => {0i8},
+        _ => {-128i8}
+    };
+
+    signed_part + (unsigned_part as i8)
 }
 
 #[cfg(test)]
@@ -59,6 +70,17 @@ mod tests {
 
         let input = "10000011";
         assert_eq!(str_to_unsigned_flat(input), 131);
+
+        let input = "00010000";
+        assert_eq!(str_to_unsigned_flat(&input[3..]), 16);
+
+    }
+
+    #[test]
+    fn test_str_to_signed_flat() {
+        assert_eq!(str_to_signed_flat("10010110"), -106);
+        assert_eq!(str_to_signed_flat("10000000"), -128);
+        assert_eq!(str_to_signed_flat("00000100"), 4);
     }
 
     #[test]
