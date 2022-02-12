@@ -1,27 +1,34 @@
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
-fn str_to_unsigned(s: &str) -> Result<u8, &str> {
-    if let Some(err) = validate_8bits(s)  {
-        return Err(err);
-    }
-    
-    Ok(str_to_unsigned_flat(s))
+struct Byte<'a> {
+    inner: &'a str
 }
 
-fn validate_8bits(s: &str) -> Option<&str> {
-    if s.len() != 8 {
-        return Some("The string's length should be equal to 8");
-    }
-
-    for c in s.chars() {
-        match c {
-            '0' | '1' => { }
-            _ => {
-                return Some("String contains symbols other than 0 or 1");
-            }
+impl<'a> Byte<'a> {
+    pub fn new(s: &'a str) -> Result<Self, &'a str> {
+        match Self::validate_8bits(s) {
+            Some(err) => Err(err),
+            None => Ok(Byte{
+                inner: s
+            })
         }
     }
 
-    None
+    fn validate_8bits(s: &str) -> Option<&str> {
+        if s.len() != 8 {
+            return Some("The string's length should be equal to 8");
+        }
+
+        for c in s.chars() {
+            match c {
+                '0' | '1' => { }
+                _ => {
+                    return Some("String contains symbols other than 0 or 1");
+                }
+            }
+        }
+
+        None
+    }
 }
 
 fn str_to_unsigned_flat(s: &str) -> u8 {
@@ -86,15 +93,15 @@ mod tests {
     #[test]
     fn test_validate_8bits() {
         let input = "ab";
-        assert_eq!(validate_8bits(input), Some("The string's length should be equal to 8"));
+        assert_eq!(Byte::validate_8bits(input), Some("The string's length should be equal to 8"));
 
         let input = "123456789";
-        assert_eq!(validate_8bits(input), Some("The string's length should be equal to 8"));
+        assert_eq!(Byte::validate_8bits(input), Some("The string's length should be equal to 8"));
 
         let input = "000a0000";
-        assert_eq!(validate_8bits(input), Some("String contains symbols other than 0 or 1"));
+        assert_eq!(Byte::validate_8bits(input), Some("String contains symbols other than 0 or 1"));
 
         let input = "00010000";
-        assert_eq!(validate_8bits(input), None);
+        assert_eq!(Byte::validate_8bits(input), None);
     }
 }
