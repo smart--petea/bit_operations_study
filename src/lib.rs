@@ -29,38 +29,50 @@ impl<'a> Byte<'a> {
 
         None
     }
-}
 
-fn str_to_unsigned_flat(s: &str) -> u8 {
-    let s = s.chars().collect::<Vec<char>>();
+    pub fn to_signed(s: &str) -> i8 {
+        let unsigned_part = Self::to_unsigned(&s[1..]);
+        let signed_part = match s.chars().next().unwrap() {
+            '0' => {0i8},
+            _ => {-128i8}
+        };
 
-    let mut result = 0u8;
-    let mut multiply = 1u8;
-    let len = s.len() - 1;
-    for i in 0..=len {
-        let position = len - i;
-
-        match s[position] {
-            '1' => {
-                result = result + multiply;
-            }
-            _ => {}
-        }
-
-        multiply = multiply << 1;
+        signed_part + (unsigned_part as i8)
     }
 
-    result
+    fn to_unsigned(s: &str) -> u8 {
+        let s = s.chars().collect::<Vec<char>>();
+
+        let mut result = 0u8;
+        let mut multiply = 1u8;
+        let len = s.len() - 1;
+        for i in 0..=len {
+            let position = len - i;
+
+            match s[position] {
+                '1' => {
+                    result = result + multiply;
+                }
+                _ => {}
+            }
+
+            multiply = multiply << 1;
+        }
+
+        result
+    }
 }
 
-fn str_to_signed_flat(s: &str) -> i8 {
-    let unsigned_part = str_to_unsigned_flat(&s[1..]);
-    let signed_part = match s.chars().next().unwrap() {
-        '0' => {0i8},
-        _ => {-128i8}
-    };
+impl<'a> Into<i8> for Byte<'a> {
+    fn into(self) -> i8 {
+        Byte::to_signed(self.inner)
+    }
+}
 
-    signed_part + (unsigned_part as i8)
+impl<'a> Into<u8> for Byte<'a> {
+    fn into(self) -> u8 {
+        Byte::to_unsigned(self.inner)
+    }
 }
 
 #[cfg(test)]
@@ -68,26 +80,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_str_to_unsigned_flat() {
-        let input = "00000001";
-        assert_eq!(str_to_unsigned_flat(input), 1);
+    fn test_as_u8() {
+        let byte = Byte::new("10000011").unwrap();
+        assert_eq!(Into::<u8>::into(byte), 131u8);
+    }
 
-        let input = "00000011";
-        assert_eq!(str_to_unsigned_flat(input), 3);
-
-        let input = "10000011";
-        assert_eq!(str_to_unsigned_flat(input), 131);
+    #[test]
+    fn test_to_unsigned() {
+        assert_eq!(Byte::to_unsigned("00000001"), 1);
+        assert_eq!(Byte::to_unsigned("00000011"), 3);
+        assert_eq!(Byte::to_unsigned("10000011"), 131);
 
         let input = "00010000";
-        assert_eq!(str_to_unsigned_flat(&input[3..]), 16);
+        assert_eq!(Byte::to_unsigned(&input[3..]), 16);
 
     }
 
     #[test]
-    fn test_str_to_signed_flat() {
-        assert_eq!(str_to_signed_flat("10010110"), -106);
-        assert_eq!(str_to_signed_flat("10000000"), -128);
-        assert_eq!(str_to_signed_flat("00000100"), 4);
+    fn test_to_signed() {
+        assert_eq!(Byte::to_signed("10010110"), -106);
+        assert_eq!(Byte::to_signed("10000000"), -128);
+        assert_eq!(Byte::to_signed("00000100"), 4);
     }
 
     #[test]
