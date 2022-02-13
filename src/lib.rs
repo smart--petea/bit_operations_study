@@ -1,11 +1,13 @@
+use core::ops::Add;
+
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
-struct Byte<'a> {
-    inner: &'a str
+struct Byte {
+    inner: String
 }
 
-impl<'a> Byte<'a> {
-    pub fn new(s: &'a str) -> Result<Self, &'a str> {
-        match Self::validate_8bits(s) {
+impl Byte {
+    pub fn new(s: String) -> Result<Self, String> {
+        match Self::validate_8bits(&s) {
             Some(err) => Err(err),
             None => Ok(Byte{
                 inner: s
@@ -13,16 +15,16 @@ impl<'a> Byte<'a> {
         }
     }
 
-    fn validate_8bits(s: &str) -> Option<&str> {
+    fn validate_8bits(s: &String) -> Option<String> {
         if s.len() != 8 {
-            return Some("The string's length should be equal to 8");
+            return Some("The string's length should be equal to 8".into());
         }
 
         for c in s.chars() {
             match c {
                 '0' | '1' => { }
                 _ => {
-                    return Some("String contains symbols other than 0 or 1");
+                    return Some("String contains symbols other than 0 or 1".into());
                 }
             }
         }
@@ -30,8 +32,8 @@ impl<'a> Byte<'a> {
         None
     }
 
-    pub fn to_signed(s: &str) -> i8 {
-        let unsigned_part = Self::to_unsigned(&s[1..]);
+    pub fn to_signed(s: &String) -> i8 {
+        let unsigned_part = Self::to_unsigned(&s[1..].into());
         let signed_part = match s.chars().next().unwrap() {
             '0' => {0i8},
             _ => {-128i8}
@@ -40,7 +42,7 @@ impl<'a> Byte<'a> {
         signed_part + (unsigned_part as i8)
     }
 
-    fn to_unsigned(s: &str) -> u8 {
+    fn to_unsigned(s: &String) -> u8 {
         let s = s.chars().collect::<Vec<char>>();
 
         let mut result = 0u8;
@@ -61,17 +63,31 @@ impl<'a> Byte<'a> {
 
         result
     }
-}
 
-impl<'a> Into<i8> for Byte<'a> {
-    fn into(self) -> i8 {
-        Byte::to_signed(self.inner)
+    fn sum_str<'b>(left: &String, right: &String) -> String {
+        String::new()
     }
 }
 
-impl<'a> Into<u8> for Byte<'a> {
+impl Into<i8> for Byte {
+    fn into(self) -> i8 {
+        Byte::to_signed(&self.inner)
+    }
+}
+
+impl Into<u8> for Byte {
     fn into(self) -> u8 {
-        Byte::to_unsigned(self.inner)
+        Byte::to_unsigned(&self.inner)
+    }
+}
+
+impl Add for Byte {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        let sum = Self::sum_str(&self.inner, &other.inner);
+
+        Self::new(sum).unwrap()
     }
 }
 
@@ -81,40 +97,39 @@ mod tests {
 
     #[test]
     fn test_as_u8() {
-        let byte = Byte::new("10000011").unwrap();
+        let byte = Byte::new("10000011".into()).unwrap();
         assert_eq!(Into::<u8>::into(byte), 131u8);
     }
 
     #[test]
     fn test_to_unsigned() {
-        assert_eq!(Byte::to_unsigned("00000001"), 1);
-        assert_eq!(Byte::to_unsigned("00000011"), 3);
-        assert_eq!(Byte::to_unsigned("10000011"), 131);
+        assert_eq!(Byte::to_unsigned(&("00000001").into()), 1);
+        assert_eq!(Byte::to_unsigned(&("00000011").into()), 3);
+        assert_eq!(Byte::to_unsigned(&("10000011").into()), 131);
 
         let input = "00010000";
-        assert_eq!(Byte::to_unsigned(&input[3..]), 16);
-
+        assert_eq!(Byte::to_unsigned(&(&input[3..].into())), 16);
     }
 
     #[test]
     fn test_to_signed() {
-        assert_eq!(Byte::to_signed("10010110"), -106);
-        assert_eq!(Byte::to_signed("10000000"), -128);
-        assert_eq!(Byte::to_signed("00000100"), 4);
+        assert_eq!(Byte::to_signed(&"10010110".into()), -106);
+        assert_eq!(Byte::to_signed(&"10000000".into()), -128);
+        assert_eq!(Byte::to_signed(&"00000100".into()), 4);
     }
 
     #[test]
     fn test_validate_8bits() {
-        let input = "ab";
-        assert_eq!(Byte::validate_8bits(input), Some("The string's length should be equal to 8"));
+        let input = "ab".into();
+        assert_eq!(Byte::validate_8bits(&input), Some("The string's length should be equal to 8".into()));
 
-        let input = "123456789";
-        assert_eq!(Byte::validate_8bits(input), Some("The string's length should be equal to 8"));
+        let input = "123456789".into();
+        assert_eq!(Byte::validate_8bits(&input), Some("The string's length should be equal to 8".into()));
 
-        let input = "000a0000";
-        assert_eq!(Byte::validate_8bits(input), Some("String contains symbols other than 0 or 1"));
+        let input = "000a0000".into();
+        assert_eq!(Byte::validate_8bits(&input), Some("String contains symbols other than 0 or 1".into()));
 
-        let input = "00010000";
-        assert_eq!(Byte::validate_8bits(input), None);
+        let input = "00010000".into();
+        assert_eq!(Byte::validate_8bits(&input), None);
     }
 }
