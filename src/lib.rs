@@ -108,14 +108,8 @@ impl Add for Byte {
                     overflow = ONE;
                 }
                 (ONE, ZERO) | (ZERO, ONE) => {
-                    //todo optimize it
-                    if overflow {
-                        sum[i] = ZERO;
-                        overflow = ONE;
-                    } else {
-                        sum[i] = ONE;
-                        overflow = ZERO;
-                    }
+                    sum[i] = !overflow;
+                    overflow = !sum[i];
                 }
                 _ => {
                     sum[i] = overflow;
