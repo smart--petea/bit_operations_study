@@ -2,11 +2,14 @@ use core::ops::Add;
 
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
 struct Byte {
-    inner: [u8; 8]
+    inner: [bool; 8] //0bit, 1bit, ..., 8bit. Changed it in order to simplify the computations
 }
 
 const U8_0: u8 = '0' as u8;
 const U8_1: u8 = '1' as u8;
+
+const ZERO: bool = false;
+const ONE: bool = true;
 
 impl Byte {
     pub fn new(s: String) -> Result<Self, String> {
@@ -20,14 +23,17 @@ impl Byte {
         }
     }
 
-    fn slice_to_array<'a, T>(slice: T) -> [u8; 8]
+    fn slice_to_array<'a, T>(slice: T) -> [bool; 8]
     where T: Into<&'a [u8]>
     {
         let slice = slice.into();
-        let mut ar = [0u8; 8];
+        let mut ar = [false; 8];
 
         for i in 0..=7 {
-            ar[i] = slice[7-i];
+            ar[i] = match slice[7-i] {
+                U8_0 => false,
+                _ => true,
+            } 
         }
 
         ar
@@ -50,23 +56,22 @@ impl Byte {
         None
     }
 
-    pub fn to_signed(s: &[u8]) -> i8 {
+    pub fn to_signed(s: &[bool]) -> i8 {
         let unsigned_part = Self::to_unsigned(&s[..7]);
         let signed_part = match *s.last().unwrap() {
-            U8_0 => {0i8},
+            ZERO => {0i8},
             _ => {-128i8}
         };
 
         signed_part + (unsigned_part as i8)
     }
 
-    fn to_unsigned(s: &[u8]) -> u8 {
+    fn to_unsigned(s: &[bool]) -> u8 {
         let mut result = 0u8;
         let mut multiply = 1u8;
-        let len = s.len() - 1;
         for &u in s {
             match u {
-                U8_1 => {
+                ONE => {
                     result = result + multiply;
                 }
                 _ => {}
@@ -76,21 +81,6 @@ impl Byte {
         }
 
         result
-    }
-
-    //todo
-    fn sum_str(left: &String, right: &String) -> String {
-        let left = left.as_bytes();
-        assert_eq!(left.len(), 8);
-
-        let right = right.as_bytes();
-        assert_eq!(right.len(), 8);
-
-
-        for i in 0..=7 {
-        }
-
-        String::new()
     }
 }
 
@@ -106,11 +96,17 @@ impl Into<u8> for Byte {
     }
 }
 
-/*todo
+/*
 impl Add for Byte {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
+        let mut sum = [0u8; 8];
+
+        let mut overflow = 0u8;
+        for i in 0..=7 {
+        }
+
         let sum = Self::sum_str(&self.inner, &other.inner);
 
         Self::new(sum).unwrap()
@@ -139,26 +135,16 @@ mod tests {
 
     #[test]
     fn test_to_unsigned() {
-        let input =  as_reversed_bytes("00000001");
-        assert_eq!(Byte::to_unsigned(&input[..]), 1);
-
-        let input = as_reversed_bytes("00000011");
-        assert_eq!(Byte::to_unsigned(&input[..]), 3);
-
-        let input = as_reversed_bytes("10000011");
-        assert_eq!(Byte::to_unsigned(&input[..]), 131);
+        assert_eq!(Byte::to_unsigned(&[true, false, false, false, false, false, false, false]), 1);
+        assert_eq!(Byte::to_unsigned(&[true,  true, false, false, false, false, false, false]), 3);
+        assert_eq!(Byte::to_unsigned(&[true,  true, false, false, false, false, false, true]), 131);
     }
 
     #[test]
     fn test_to_signed() {
-        let input = as_reversed_bytes("10010110");
-        assert_eq!(Byte::to_signed(&input[..]), -106);
-
-        let input = as_reversed_bytes("10000000");
-        assert_eq!(Byte::to_signed(&input[..]), -128);
-
-        let input = as_reversed_bytes("00000100");
-        assert_eq!(Byte::to_signed(&input[..]), 4);
+        assert_eq!(Byte::to_signed(&[false, true, true, false, true, false, false, true]), -106);
+        assert_eq!(Byte::to_signed(&[false, false, false, false, false, false, false, true]), -128);
+        assert_eq!(Byte::to_signed(&[false, false, true, false, false, false, false, false]), 4);
     }
 
     #[test]
