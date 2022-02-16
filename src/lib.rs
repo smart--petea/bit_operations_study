@@ -1,6 +1,7 @@
 use core::ops::Add;
 
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
+#[derive(Debug)]
 struct Byte {
     inner: [bool; 8] //0bit, 1bit, ..., 8bit. Changed it in order to simplify the computations
 }
@@ -16,10 +17,7 @@ impl Byte {
         let s = s.as_bytes();
         match Self::validate_8bits(&s) {
             Some(err) => Err(err),
-            None => Ok(
-                Byte{
-                inner: Byte::slice_to_array(s)
-            })
+            None => Ok(Byte{ inner: Byte::slice_to_array(s)})
         }
     }
 
@@ -96,23 +94,41 @@ impl Into<u8> for Byte {
     }
 }
 
-/*
 impl Add for Byte {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        let mut sum = [0u8; 8];
+        let mut sum = [false; 8];
 
-        let mut overflow = 0u8;
+        let mut overflow = ZERO;
         for i in 0..=7 {
+            match (self.inner[i], other.inner[i]) {
+                (ONE, ONE) => {
+                    sum[i] = overflow;
+                    overflow = ONE;
+                }
+                (ONE, ZERO) | (ZERO, ONE) => {
+                    //todo optimize it
+                    if overflow {
+                        sum[i] = ZERO;
+                        overflow = ONE;
+                    } else {
+                        sum[i] = ONE;
+                        overflow = ZERO;
+                    }
+                }
+                _ => {
+                    sum[i] = overflow;
+                    overflow = ZERO;
+                }
+            }
         }
 
-        let sum = Self::sum_str(&self.inner, &other.inner);
-
-        Self::new(sum).unwrap()
+        Self {
+            inner: sum
+        }
     }
 }
-*/
 
 #[cfg(test)]
 mod tests {
@@ -160,5 +176,43 @@ mod tests {
 
         let input = "00010000".as_bytes();
         assert_eq!(Byte::validate_8bits(&input), None);
+    }
+
+    #[test]
+    fn test_add() {
+        let left = Byte::new("00000000".into()).unwrap();
+        let right = Byte::new("00000000".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 0u8);
+
+        let left = Byte::new( "00000001".into()).unwrap();
+        let right = Byte::new("00000000".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 1u8);
+
+        let left = Byte::new( "00000001".into()).unwrap();
+        let right = Byte::new("00000001".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 2u8);
+
+        let left = Byte::new( "00000011".into()).unwrap();
+        let right = Byte::new("00000001".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 4u8);
+
+        let left = Byte::new( "00000011".into()).unwrap();
+        let right = Byte::new("00000011".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 6u8);
+
+        let left = Byte::new( "00000111".into()).unwrap();
+        let right = Byte::new("00000011".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 10u8);
+
+        let left = Byte::new( "00000101".into()).unwrap();
+        let right = Byte::new("00000011".into()).unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 8u8);
     }
 }
