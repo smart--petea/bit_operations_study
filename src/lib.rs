@@ -1,7 +1,8 @@
 use core::ops::Add;
+use core::ops::Not;
 
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Byte {
     inner: [bool; 8] //0bit, 1bit, ..., 8bit. Changed it in order to simplify the computations
 }
@@ -125,6 +126,18 @@ impl Add for Byte {
     }
 }
 
+impl Not for Byte {
+    type Output = Self;
+
+    fn not(mut self) -> Self::Output {
+        for i in 0..=7 {
+            self.inner[i] = !self.inner[i];
+        }
+
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -209,5 +222,20 @@ mod tests {
         let right = Byte::new("00000011").unwrap();
         let sum = left + right;
         assert_eq!(Into::<u8>::into(sum), 8u8);
+    }
+
+    #[test]
+    fn test_not() {
+        let left = !Byte::new( "00000101").unwrap();
+        assert_eq!(Into::<i8>::into(left), -6);
+    }
+
+    #[test]
+    fn test_minus_one() {
+        let left = Byte::new( "00000101").unwrap();
+        let sum = !left.clone() + left;
+
+        assert_eq!(Into::<i8>::into(sum), -1);
+
     }
 }
