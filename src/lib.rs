@@ -23,6 +23,29 @@ impl Byte {
         }
     }
 
+    pub fn to_hex(&self) -> String {
+        let mut result = String::new();
+
+        result.push(Self::bits_to_char(&self.inner[4..]));
+        result.push(Self::bits_to_char(&self.inner[0..4]));
+
+        result
+    }
+
+    fn bits_to_char(bits: &[bool]) -> char {
+        let u = Self::to_unsigned(bits); 
+        match  u {
+            0..=9 => std::char::from_digit(u as u32, 10).unwrap(),
+            10 => 'A',
+            11 => 'B',
+            12 => 'C',
+            13 => 'D',
+            14 => 'E',
+            _  => 'F',
+        }
+
+    }
+
     fn string_to_bools<'a, T>(slice: T) -> [bool; 8]
     where T: Into<&'a [u8]>
     {
@@ -237,5 +260,35 @@ mod tests {
 
         assert_eq!(Into::<i8>::into(sum), -1);
 
+    }
+
+    #[test]
+    fn test_to_hex() {
+        let byte = Byte::new("00000000").unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new("00010010").unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new("00110100").unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new("01010110").unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new("01111000").unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new("10011010").unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new("10111100").unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new("11011110").unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new("11111111").unwrap();
+        assert_eq!(byte.to_hex(), "FF");
     }
 }
