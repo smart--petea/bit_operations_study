@@ -1,6 +1,46 @@
 use core::ops::Add;
 use core::ops::Not;
 
+struct ByteNewFacade<'a> {
+    bytes: Option<&'a [u8]>
+}
+
+impl<'a> ByteNewFacade<'a> {
+    fn as_bytes(self) -> Option<&'a [u8]> {
+        self.bytes
+    }
+
+    fn validate_8bits(s: &[u8]) -> Option<String> {
+        if s.len() != 8 {
+            return Some("The string's length should be equal to 8".into());
+        }
+
+        for &c in s {
+            match c {
+                U8_0 | U8_1 => { }
+                _ => {
+                    return Some("String contains symbols other than 0 or 1".into());
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a> From<&'a str> for ByteNewFacade<'a> {
+    fn from(l: &'a str) -> ByteNewFacade<'a> {
+        match Self::validate_8bits(l.as_bytes()) {
+            Some(err) => ByteNewFacade {
+                bytes: Some(l.as_bytes())
+            },
+            _ => ByteNewFacade {
+                bytes: Some(l.as_bytes())
+            }
+        }
+    }
+}
+
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
 #[derive(Debug, Clone)]
 struct Byte {
@@ -14,12 +54,11 @@ const ZERO: bool = false;
 const ONE: bool = true;
 
 impl Byte {
-    pub fn new<T: Into<String>>(s: T) -> Result<Self, String> {
-        let s = s.into();
-        let s = s.as_bytes();
-        match Self::validate_8bits(&s) {
-            Some(err) => Err(err),
-            None => Ok(Byte{ inner: Byte::string_to_bools(s)})
+    pub fn new<'a, T: Into<ByteNewFacade<'a>>>(b: T) -> Result<Self, String> {
+        let bytes = b.into().as_bytes();
+        match bytes {
+            Some(bytes) => Ok(Byte{ inner: Byte::string_to_bools(bytes)}),
+            None => Err("Nothing computed".into()) 
         }
     }
 
@@ -61,24 +100,6 @@ impl Byte {
 
         ar
     }
-
-    fn validate_8bits(s: &[u8]) -> Option<String> {
-        if s.len() != 8 {
-            return Some("The string's length should be equal to 8".into());
-        }
-
-        for &c in s {
-            match c {
-                U8_0 | U8_1 => { }
-                _ => {
-                    return Some("String contains symbols other than 0 or 1".into());
-                }
-            }
-        }
-
-        None
-    }
-
     pub fn to_signed(s: &[bool]) -> i8 {
         let unsigned_part = Self::to_unsigned(&s[..7]);
         let signed_part = match *s.last().unwrap() {
@@ -197,16 +218,16 @@ mod tests {
     #[test]
     fn test_validate_8bits() {
         let input = "ab".as_bytes();
-        assert_eq!(Byte::validate_8bits(&input), Some("The string's length should be equal to 8".into()));
+        assert_eq!(ByteNewFacade::validate_8bits(&input), Some("The string's length should be equal to 8".into()));
 
         let input = "123456789".as_bytes();
-        assert_eq!(Byte::validate_8bits(&input), Some("The string's length should be equal to 8".into()));
+        assert_eq!(ByteNewFacade::validate_8bits(&input), Some("The string's length should be equal to 8".into()));
 
         let input = "000a0000".as_bytes();
-        assert_eq!(Byte::validate_8bits(&input), Some("String contains symbols other than 0 or 1".into()));
+        assert_eq!(ByteNewFacade::validate_8bits(&input), Some("String contains symbols other than 0 or 1".into()));
 
         let input = "00010000".as_bytes();
-        assert_eq!(Byte::validate_8bits(&input), None);
+        assert_eq!(ByteNewFacade::validate_8bits(&input), None);
     }
 
     #[test]
