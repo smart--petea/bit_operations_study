@@ -1,12 +1,13 @@
 use core::ops::Add;
 use core::ops::Not;
+use std::result::Result;
 
 struct ByteNewFacade<'a> {
-    bytes: Option<&'a [u8]>
+    bytes: Result<&'a [u8], String>
 }
 
 impl<'a> ByteNewFacade<'a> {
-    fn as_bytes(self) -> Option<&'a [u8]> {
+    fn as_bytes(self) -> Result<&'a [u8], String> {
         self.bytes
     }
 
@@ -32,10 +33,10 @@ impl<'a> From<&'a str> for ByteNewFacade<'a> {
     fn from(l: &'a str) -> ByteNewFacade<'a> {
         match Self::validate_8bits(l.as_bytes()) {
             Some(err) => ByteNewFacade {
-                bytes: Some(l.as_bytes())
+                bytes: Err(err)
             },
-            _ => ByteNewFacade {
-                bytes: Some(l.as_bytes())
+            None => ByteNewFacade {
+                bytes: Ok(l.as_bytes())
             }
         }
     }
@@ -55,10 +56,9 @@ const ONE: bool = true;
 
 impl Byte {
     pub fn new<'a, T: Into<ByteNewFacade<'a>>>(b: T) -> Result<Self, String> {
-        let bytes = b.into().as_bytes();
-        match bytes {
-            Some(bytes) => Ok(Byte{ inner: Byte::string_to_bools(bytes)}),
-            None => Err("Nothing computed".into()) 
+        match b.into().as_bytes() {
+            Ok(bytes) => Ok(Byte{ inner: Byte::string_to_bools(bytes)}),
+            Err(err) => Err(err) 
         }
     }
 
