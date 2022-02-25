@@ -2,12 +2,12 @@ use core::ops::Add;
 use core::ops::Not;
 use std::result::Result;
 
-struct ByteNewFacade<'a> {
-    bytes: Result<&'a [u8], String>
+struct ByteNewFacade {
+    bytes: Result<[u8; 8], String>
 }
 
-impl<'a> ByteNewFacade<'a> {
-    fn as_bytes(self) -> Result<&'a [u8], String> {
+impl ByteNewFacade {
+    fn as_bytes(self) -> Result<[u8; 8], String> {
         self.bytes
     }
 
@@ -27,17 +27,54 @@ impl<'a> ByteNewFacade<'a> {
 
         None
     }
+
+    fn validate_2hex(s: &str) -> Option<String> {
+        if s.len() != 2 {
+            return Some("The string's length in hex representation should be equal to 2".into());
+        }
+
+        for &c in s.as_bytes() {
+            match c {
+                U8_0..=U8_9 => { }
+                U8_A..=U8_F => { }
+                _ => {
+                    return Some("String contains symbols other than 0..9 and A-F".into());
+                }
+            }
+        }
+
+        None
+    }
 }
 
-impl<'a> From<&'a str> for ByteNewFacade<'a> {
-    fn from(l: &'a str) -> ByteNewFacade<'a> {
-        match Self::validate_8bits(l.as_bytes()) {
-            Some(err) => ByteNewFacade {
-                bytes: Err(err)
-            },
-            None => ByteNewFacade {
-                bytes: Ok(l.as_bytes())
+impl<'a> From<&str> for ByteNewFacade {
+    fn from(l: &str) -> ByteNewFacade {
+        let bytes = l.as_bytes();
+        if Self::validate_8bits(bytes).is_none() {
+            return ByteNewFacade {
+                bytes: Ok([
+                           bytes[0],
+                           bytes[1],
+                           bytes[2],
+                           bytes[3],
+                           bytes[4],
+                           bytes[5],
+                           bytes[6],
+                           bytes[7]
+                ])
             }
+        }
+
+        /*
+        if Self::validate_2hex(l).is_none() {
+            return ByteNewFacade {
+                bytes: Ok(Self::two_hex_to_bytes(l))
+            }
+        }
+        */
+
+        ByteNewFacade {
+            bytes: Err("Can't deduce ByteNewFacade".into())
         }
     }
 }
@@ -50,14 +87,17 @@ struct Byte {
 
 const U8_0: u8 = '0' as u8;
 const U8_1: u8 = '1' as u8;
+const U8_9: u8 = '9' as u8;
+const U8_A: u8 = 'A' as u8;
+const U8_F: u8 = 'F' as u8;
 
 const ZERO: bool = false;
 const ONE: bool = true;
 
 impl Byte {
-    pub fn new<'a, T: Into<ByteNewFacade<'a>>>(b: T) -> Result<Self, String> {
+    pub fn new<T: Into<ByteNewFacade>>(b: T) -> Result<Self, String> {
         match b.into().as_bytes() {
-            Ok(bytes) => Ok(Byte{ inner: Byte::string_to_bools(bytes)}),
+            Ok(bytes) => Ok(Byte{ inner: Byte::string_to_bools(&bytes as &[u8])}),
             Err(err) => Err(err) 
         }
     }
@@ -214,6 +254,20 @@ mod tests {
         assert_eq!(Byte::to_signed(&[false, false, false, false, false, false, false, true]), -128);
         assert_eq!(Byte::to_signed(&[false, false, true, false, false, false, false, false]), 4);
     }
+
+    /*
+    #[test]
+    fn test_from_2hex() {
+        let input = "ABC".as_bytes();
+        assert_eq!(ByteNewFacade::from_2hex(&input), None);
+
+        let input = "01".as_bytes();
+        assert_eq!(ByteNewFacade::from_2hex(&input), [U8_0, U8_0, U8_0, U8_0, U8_0, U8_0, U8_0, U8_1]);
+
+        let input = "AB".as_bytes();
+        assert_eq!(ByteNewFacade::from_2hex(&input), [U8_0, U8_0, U8_0, U8_0, U8_0, U8_0, U8_0, U8_1]);
+    }
+    */
 
     #[test]
     fn test_validate_8bits() {
