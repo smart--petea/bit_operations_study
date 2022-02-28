@@ -12,12 +12,12 @@ impl ByteNewFacade {
         self.bytes
     }
 
-    fn validate_8bits(s: &str) -> Option<String> {
+    fn validate_8bits(s: &[u8]) -> Option<String> {
         if s.len() != 8 {
             return Some("The string's length should be equal to 8".into());
         }
 
-        for &c in s.as_bytes() {
+        for &c in s {
             match c {
                 U8_0 | U8_1 => { }
                 _ => {
@@ -29,17 +29,17 @@ impl ByteNewFacade {
         None
     }
 
-    fn validate_2hex(s: &str) -> Option<String> {
-        if s.len() != 2 {
-            return Some("The string's length in hex representation should be equal to 2".into());
+    fn validate_2hex(input: &[u8]) -> Option<String> {
+        if input.len() != 2 {
+            return Some("The u8 slice's length in hex representation should be equal to 2".into());
         }
 
-        for &c in s.as_bytes() {
+        for &c in input {
             match c {
                 U8_0..=U8_9 => { }
                 U8_A..=U8_F => { }
                 _ => {
-                    return Some("String contains symbols other than 0..9 and A-F".into());
+                    return Some("u8 slice contains symbols other than 0..9 and A-F".into());
                 }
             }
         }
@@ -47,12 +47,12 @@ impl ByteNewFacade {
         None
     }
 
-    fn transform_2hex_to_8u8(s: &str) -> [u8; 8] {
+    fn transform_2hex_to_8u8(s: &[u8]) -> [u8; 8] {
         let mut result = [0u8; 8];
         let mut i = 0;
 
-        for c in s.chars() {
-            for bit in Self::transform_char_to_4bits(c) {
+        for &c in s {
+            for bit in Self::transform_u8_to_4bits(c) {
                 result[i] = bit;
                 i = i + 1;
             }
@@ -61,25 +61,33 @@ impl ByteNewFacade {
         result
     }
 
-    fn transform_char_to_4bits(c: char) ->  [u8; 4] {
+    fn transform_u8_to_4bits(c: u8) ->  [u8; 4] {
         match c {
-            '0' => [0u8, 0u8, 0u8, 0u8],
-            '1' => [0u8, 0u8, 0u8, 1u8],
-            '2' => [0u8, 0u8, 1u8, 0u8],
-            '3' => [0u8, 0u8, 1u8, 1u8],
-            '4' => [0u8, 1u8, 0u8, 0u8],
-            '5' => [0u8, 1u8, 0u8, 1u8],
-            '6' => [0u8, 1u8, 1u8, 0u8],
-            '7' => [0u8, 1u8, 1u8, 1u8],
-            '8' => [1u8, 0u8, 0u8, 0u8],
-            '9' => [1u8, 0u8, 0u8, 1u8],
-            'A' => [1u8, 0u8, 1u8, 0u8],
-            'B' => [1u8, 0u8, 1u8, 1u8],
-            'C' => [1u8, 1u8, 0u8, 0u8],
-            'D' => [1u8, 1u8, 0u8, 1u8],
-            'E' => [1u8, 1u8, 1u8, 0u8],
-            'F' => [1u8, 1u8, 1u8, 1u8],
+            U8_0 => [0u8, 0u8, 0u8, 0u8],
+            U8_1 => [0u8, 0u8, 0u8, 1u8],
+            U8_2 => [0u8, 0u8, 1u8, 0u8],
+            U8_3 => [0u8, 0u8, 1u8, 1u8],
+            U8_4 => [0u8, 1u8, 0u8, 0u8],
+            U8_5 => [0u8, 1u8, 0u8, 1u8],
+            U8_6 => [0u8, 1u8, 1u8, 0u8],
+            U8_7 => [0u8, 1u8, 1u8, 1u8],
+            U8_8 => [1u8, 0u8, 0u8, 0u8],
+            U8_9 => [1u8, 0u8, 0u8, 1u8],
+            U8_A => [1u8, 0u8, 1u8, 0u8],
+            U8_B => [1u8, 0u8, 1u8, 1u8],
+            U8_C => [1u8, 1u8, 0u8, 0u8],
+            U8_D => [1u8, 1u8, 0u8, 1u8],
+            U8_E => [1u8, 1u8, 1u8, 0u8],
+            U8_F => [1u8, 1u8, 1u8, 1u8],
             _ => panic!("wrong char to be trasnformed in hex {}", c)
+        }
+    }
+}
+
+impl From<[bool; 0]> for ByteNewFacade {
+    fn from(bools: [bool; 0]) -> ByteNewFacade {
+        ByteNewFacade {
+            bytes: Ok([0u8; 8])
         }
     }
 }
@@ -87,6 +95,44 @@ impl ByteNewFacade {
 impl From<[bool; 8]> for ByteNewFacade {
     fn from(bools: [bool; 8]) -> ByteNewFacade {
         From::<&[bool]>::from(&bools)
+    }
+}
+
+impl From<&[u8]> for ByteNewFacade {
+    fn from(input: &[u8]) -> ByteNewFacade {
+        if input.len() == 0 {
+            return ByteNewFacade {
+                bytes: Ok([0u8; 8])
+            };
+        }
+
+        if Self::validate_8bits(input).is_none() {
+            let mut bytes = [0u8; 8];
+            let mut i = 0;
+            for &c in input {
+                bytes[i] = match c {
+                    U8_0 => 0,
+                    U8_1 => 1,
+                    _ => panic!("unreacheable")
+                };
+
+                i = i + 1;
+            }
+
+            return ByteNewFacade {
+                bytes: Ok(bytes)
+            };
+        }
+
+        if Self::validate_2hex(input).is_none() {
+            return ByteNewFacade {
+                bytes: Ok(Self::transform_2hex_to_8u8(input))
+            }
+        }
+
+        ByteNewFacade {
+            bytes: Err("Can't deduce ByteNewFacade".into())
+        }
     }
 }
 
@@ -118,15 +164,21 @@ impl From<&[bool]> for ByteNewFacade {
     }
 }
 
+impl From<String> for ByteNewFacade {
+    fn from(s: String) -> ByteNewFacade {
+        From::<&str>::from(&s)
+    }
+}
+
 impl From<&str> for ByteNewFacade {
     fn from(l: &str) -> ByteNewFacade {
-        if Self::validate_8bits(l).is_none() {
+        if Self::validate_8bits(l.as_bytes()).is_none() {
             let mut bytes = [0u8; 8];
             let mut i = 0;
-            for c in l.chars() {
+            for &c in l.as_bytes() {
                 bytes[i] = match c {
-                    '0' => 0,
-                    '1' => 1,
+                    U8_0 => 0,
+                    U8_1 => 1,
                     _ => panic!("unreacheable")
                 };
 
@@ -138,9 +190,9 @@ impl From<&str> for ByteNewFacade {
             };
         }
 
-        if Self::validate_2hex(l).is_none() {
+        if Self::validate_2hex(l.as_bytes()).is_none() {
             return ByteNewFacade {
-                bytes: Ok(Self::transform_2hex_to_8u8(l))
+                bytes: Ok(Self::transform_2hex_to_8u8(l.as_bytes()))
             }
         }
 
@@ -158,8 +210,19 @@ struct Byte {
 
 const U8_0: u8 = '0' as u8;
 const U8_1: u8 = '1' as u8;
+const U8_2: u8 = '2' as u8;
+const U8_3: u8 = '3' as u8;
+const U8_4: u8 = '4' as u8;
+const U8_5: u8 = '5' as u8;
+const U8_6: u8 = '6' as u8;
+const U8_7: u8 = '7' as u8;
+const U8_8: u8 = '8' as u8;
 const U8_9: u8 = '9' as u8;
 const U8_A: u8 = 'A' as u8;
+const U8_B: u8 = 'B' as u8;
+const U8_C: u8 = 'C' as u8;
+const U8_D: u8 = 'D' as u8;
+const U8_E: u8 = 'E' as u8;
 const U8_F: u8 = 'F' as u8;
 
 const ZERO: bool = false;
@@ -319,25 +382,25 @@ mod tests {
 
     #[test]
     fn test_validate_2hex() {
-        assert_eq!(ByteNewFacade::validate_2hex("ABC"), Some("The string's length in hex representation should be equal to 2".into()));
-        assert_eq!(ByteNewFacade::validate_2hex("01"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("23"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("45"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("67"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("89"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("AB"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("CD"), None);
-        assert_eq!(ByteNewFacade::validate_2hex("EF"), None);
+        assert_eq!(ByteNewFacade::validate_2hex("ABC".as_bytes()), Some("The u8 slice's length in hex representation should be equal to 2".into()));
+        assert_eq!(ByteNewFacade::validate_2hex("01".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("23".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("45".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("67".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("89".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("AB".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("CD".as_bytes()), None);
+        assert_eq!(ByteNewFacade::validate_2hex("EF".as_bytes()), None);
 
-        assert_eq!(ByteNewFacade::validate_2hex("GH"), Some("String contains symbols other than 0..9 and A-F".into()));
+        assert_eq!(ByteNewFacade::validate_2hex("GH".as_bytes()), Some("u8 slice contains symbols other than 0..9 and A-F".into()));
     }
 
     #[test]
     fn test_validate_8bits() {
-        assert_eq!(ByteNewFacade::validate_8bits("ab"), Some("The string's length should be equal to 8".into()));
-        assert_eq!(ByteNewFacade::validate_8bits("123456789"), Some("The string's length should be equal to 8".into()));
-        assert_eq!(ByteNewFacade::validate_8bits("000a0000"), Some("String contains symbols other than 0 or 1".into()));
-        assert_eq!(ByteNewFacade::validate_8bits("00010000"), None);
+        assert_eq!(ByteNewFacade::validate_8bits("ab".as_bytes()), Some("The string's length should be equal to 8".into()));
+        assert_eq!(ByteNewFacade::validate_8bits("123456789".as_bytes()), Some("The string's length should be equal to 8".into()));
+        assert_eq!(ByteNewFacade::validate_8bits("000a0000".as_bytes()), Some("String contains symbols other than 0 or 1".into()));
+        assert_eq!(ByteNewFacade::validate_8bits("00010000".as_bytes()), None);
     }
 
     #[test]
@@ -430,7 +493,43 @@ mod tests {
     }
 
     #[test]
+    fn test_byte_from_u8_len8() {
+        let byte = Byte::new(&[0u8; 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new(&[0u8; 8] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new(&[0u8, 0, 0, 1, 0, 0, 1, 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new(&[0u8, 0u8, 1u8, 1u8, 0u8, 1u8, 0u8, 0u8] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new(&[0u8, 1, 0, 1, 0, 1, 1, 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new(&[0u8, 1, 1, 1, 1, 0, 0, 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new(&[1u8, 0, 0, 1, 1, 0, 1, 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new(&[1u8, 0, 1, 1, 1, 1, 0, 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new(&[1u8, 1, 0, 1, 1, 1, 1, 0] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new(&[1u8; 8] as &[u8]).unwrap();
+        assert_eq!(byte.to_hex(), "FF");
+    }
+
+    #[test]
     fn test_byte_from_bools_len8() {
+        let byte = Byte::new([false; 0]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
         let byte = Byte::new([false, false, false, false, false, false, false, false]).unwrap();
         assert_eq!(byte.to_hex(), "00");
 
@@ -520,6 +619,12 @@ mod tests {
     }
 
     #[test]
+    fn test_byte_from_string() {
+        let byte = Byte::new( String::from("00")).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+    }
+
+    #[test]
     fn test_byte_to_hex() {
         let byte = Byte::new("00000000").unwrap();
         assert_eq!(byte.to_hex(), "00");
@@ -551,14 +656,14 @@ mod tests {
 
     #[test]
     fn test_transform_2hex_to_8u8() {
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("01"), [0, 0, 0, 0,   0, 0, 0, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("23"), [0, 0, 1, 0,   0, 0, 1, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("45"), [0, 1, 0, 0,   0, 1, 0, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("67"), [0, 1, 1, 0,   0, 1, 1, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("89"), [1, 0, 0, 0,   1, 0, 0, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("AB"), [1, 0, 1, 0,   1, 0, 1, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("CD"), [1, 1, 0, 0,   1, 1, 0, 1]);
-        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("EF"), [1, 1, 1, 0,   1, 1, 1, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("01".as_bytes()), [0, 0, 0, 0,   0, 0, 0, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("23".as_bytes()), [0, 0, 1, 0,   0, 0, 1, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("45".as_bytes()), [0, 1, 0, 0,   0, 1, 0, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("67".as_bytes()), [0, 1, 1, 0,   0, 1, 1, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("89".as_bytes()), [1, 0, 0, 0,   1, 0, 0, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("AB".as_bytes()), [1, 0, 1, 0,   1, 0, 1, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("CD".as_bytes()), [1, 1, 0, 0,   1, 1, 0, 1]);
+        assert_eq!(ByteNewFacade::transform_2hex_to_8u8("EF".as_bytes()), [1, 1, 1, 0,   1, 1, 1, 1]);
     }
 
     #[test]
