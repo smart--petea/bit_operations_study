@@ -84,7 +84,41 @@ impl ByteNewFacade {
     }
 }
 
-impl<'a> From<&str> for ByteNewFacade {
+impl From<[bool; 8]> for ByteNewFacade {
+    fn from(bools: [bool; 8]) -> ByteNewFacade {
+        From::<&[bool]>::from(&bools)
+    }
+}
+
+impl From<&[bool]> for ByteNewFacade {
+    fn from(bools: &[bool]) -> ByteNewFacade {
+        if bools.len() == 0 {
+            return ByteNewFacade {
+                bytes: Ok([0u8; 8])
+            };
+        }
+
+        if bools.len() == 8 {
+            let mut bytes = [0u8; 8];
+            let mut i = 0;
+
+            for &bl in bools {
+                bytes[i] = if bl { 1 } else { 0 };
+                i = i + 1;
+            }
+
+            return ByteNewFacade {
+                bytes: Ok(bytes)
+            };
+        }
+
+        ByteNewFacade {
+            bytes: Err("length of the slice should be either zero or 8".into())
+        }
+    }
+}
+
+impl From<&str> for ByteNewFacade {
     fn from(l: &str) -> ByteNewFacade {
         if Self::validate_8bits(l).is_none() {
             let mut bytes = [0u8; 8];
@@ -101,7 +135,7 @@ impl<'a> From<&str> for ByteNewFacade {
 
             return ByteNewFacade {
                 bytes: Ok(bytes)
-            }
+            };
         }
 
         if Self::validate_2hex(l).is_none() {
@@ -356,7 +390,133 @@ mod tests {
         let sum = !left.clone() + left;
 
         assert_eq!(Into::<i8>::into(sum), -1);
+    }
 
+    #[test]
+    fn test_byte_from_slice_bools() {
+        let err = Byte::new(&[true; 1] as &[bool]);
+        assert_eq!(err.err(), Some("length of the slice should be either zero or 8".into()));
+
+        let byte = Byte::new(&[true; 0] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+
+        let byte = Byte::new(&[false, false, false, false, false, false, false, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new(&[false, false, false, true, false, false, true, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new(&[false, false, true, true, false, true, false, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new(&[false, true, false, true, false, true, true, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new(&[false, true, true, true, true, false, false, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new(&[true, false, false, true, true, false, true, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new(&[true, false, true, true, true, true, false, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new(&[true, true, false, true, true, true, true, false] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new(&[true; 8] as &[bool]).unwrap();
+        assert_eq!(byte.to_hex(), "FF");
+    }
+
+    #[test]
+    fn test_byte_from_bools_len8() {
+        let byte = Byte::new([false, false, false, false, false, false, false, false]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new([false, false, false, true, false, false, true, false]).unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new([false, false, true, true, false, true, false, false]).unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new([false, true, false, true, false, true, true, false]).unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new([false, true, true, true, true, false, false, false]).unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new([true, false, false, true, true, false, true, false]).unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new([true, false, true, true, true, true, false, false]).unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new([true, true, false, true, true, true, true, false]).unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new([true; 8]).unwrap();
+        assert_eq!(byte.to_hex(), "FF");
+    }
+
+    #[test]
+    fn test_byte_from_slice_str_len8() {
+        let byte = Byte::new("00000000").unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new("00010010").unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new("00110100").unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new("01010110").unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new("01111000").unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new("10011010").unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new("10111100").unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new("11011110").unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new("11111111").unwrap();
+        assert_eq!(byte.to_hex(), "FF");
+    }
+
+    #[test]
+    fn test_byte_from_slice_str_len2() {
+        let byte = Byte::new("00").unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new("12").unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new("34").unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new("56").unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new("78").unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new("9A").unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new("BC").unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new("DE").unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new("FF").unwrap();
+        assert_eq!(byte.to_hex(), "FF");
     }
 
     #[test]
@@ -386,35 +546,6 @@ mod tests {
         assert_eq!(byte.to_hex(), "DE");
 
         let byte = Byte::new("11111111").unwrap();
-        assert_eq!(byte.to_hex(), "FF");
-
-
-
-        let byte = Byte::new("00").unwrap();
-        assert_eq!(byte.to_hex(), "00");
-
-        let byte = Byte::new("12").unwrap();
-        assert_eq!(byte.to_hex(), "12");
-
-        let byte = Byte::new("34").unwrap();
-        assert_eq!(byte.to_hex(), "34");
-
-        let byte = Byte::new("56").unwrap();
-        assert_eq!(byte.to_hex(), "56");
-
-        let byte = Byte::new("78").unwrap();
-        assert_eq!(byte.to_hex(), "78");
-
-        let byte = Byte::new("9A").unwrap();
-        assert_eq!(byte.to_hex(), "9A");
-
-        let byte = Byte::new("BC").unwrap();
-        assert_eq!(byte.to_hex(), "BC");
-
-        let byte = Byte::new("DE").unwrap();
-        assert_eq!(byte.to_hex(), "DE");
-
-        let byte = Byte::new("FF").unwrap();
         assert_eq!(byte.to_hex(), "FF");
     }
 
