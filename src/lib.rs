@@ -19,7 +19,7 @@ impl ByteNewFacade {
 
         for &c in s {
             match c {
-                U8_0 | U8_1 => { }
+                U8_0 | U8_1 | 0 | 1=> { }
                 _ => {
                     return Some("String contains symbols other than 0 or 1".into());
                 }
@@ -113,6 +113,8 @@ impl From<&[u8]> for ByteNewFacade {
                 bytes[i] = match c {
                     U8_0 => 0,
                     U8_1 => 1,
+                    0 => 0,
+                    1 => 1,
                     _ => panic!("unreacheable")
                 };
 
