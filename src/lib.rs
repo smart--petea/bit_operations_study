@@ -85,7 +85,7 @@ impl ByteNewFacade {
 }
 
 impl From<[bool; 0]> for ByteNewFacade {
-    fn from(bools: [bool; 0]) -> ByteNewFacade {
+    fn from(_: [bool; 0]) -> ByteNewFacade {
         ByteNewFacade {
             bytes: Ok([0u8; 8])
         }
@@ -97,6 +97,20 @@ impl From<[bool; 8]> for ByteNewFacade {
         From::<&[bool]>::from(&bools)
     }
 }
+
+impl From<[u8; 8]> for ByteNewFacade {
+    fn from(input: [u8; 8]) -> ByteNewFacade {
+        From::<&[u8]>::from(&input as &[u8])
+    }
+} 
+
+impl From<[u8; 0]> for ByteNewFacade {
+    fn from(input: [u8; 0]) -> ByteNewFacade {
+        ByteNewFacade {
+            bytes: Ok([0u8; 8])
+        }
+    }
+} 
 
 impl From<&[u8]> for ByteNewFacade {
     fn from(input: &[u8]) -> ByteNewFacade {
@@ -174,33 +188,7 @@ impl From<String> for ByteNewFacade {
 
 impl From<&str> for ByteNewFacade {
     fn from(l: &str) -> ByteNewFacade {
-        if Self::validate_8bits(l.as_bytes()).is_none() {
-            let mut bytes = [0u8; 8];
-            let mut i = 0;
-            for &c in l.as_bytes() {
-                bytes[i] = match c {
-                    U8_0 => 0,
-                    U8_1 => 1,
-                    _ => panic!("unreacheable")
-                };
-
-                i = i + 1;
-            }
-
-            return ByteNewFacade {
-                bytes: Ok(bytes)
-            };
-        }
-
-        if Self::validate_2hex(l.as_bytes()).is_none() {
-            return ByteNewFacade {
-                bytes: Ok(Self::transform_2hex_to_8u8(l.as_bytes()))
-            }
-        }
-
-        ByteNewFacade {
-            bytes: Err("Can't deduce ByteNewFacade".into())
-        }
+        From::<&[u8]>::from(l.as_bytes())
     }
 }
 
@@ -495,7 +483,40 @@ mod tests {
     }
 
     #[test]
-    fn test_byte_from_u8_len8() {
+    fn test_byte_from_array_u8_len8() {
+        let byte = Byte::new([0u8; 0]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new([0u8; 8]).unwrap();
+        assert_eq!(byte.to_hex(), "00");
+
+        let byte = Byte::new([0u8, 0, 0, 1, 0, 0, 1, 0]).unwrap();
+        assert_eq!(byte.to_hex(), "12");
+
+        let byte = Byte::new([0u8, 0u8, 1u8, 1u8, 0u8, 1u8, 0u8, 0u8]).unwrap();
+        assert_eq!(byte.to_hex(), "34");
+
+        let byte = Byte::new([0u8, 1, 0, 1, 0, 1, 1, 0]).unwrap();
+        assert_eq!(byte.to_hex(), "56");
+
+        let byte = Byte::new([0u8, 1, 1, 1, 1, 0, 0, 0]).unwrap();
+        assert_eq!(byte.to_hex(), "78");
+
+        let byte = Byte::new([1u8, 0, 0, 1, 1, 0, 1, 0]).unwrap();
+        assert_eq!(byte.to_hex(), "9A");
+
+        let byte = Byte::new([1u8, 0, 1, 1, 1, 1, 0, 0]).unwrap();
+        assert_eq!(byte.to_hex(), "BC");
+
+        let byte = Byte::new([1u8, 1, 0, 1, 1, 1, 1, 0]).unwrap();
+        assert_eq!(byte.to_hex(), "DE");
+
+        let byte = Byte::new([1u8; 8]).unwrap();
+        assert_eq!(byte.to_hex(), "FF");
+    }
+
+    #[test]
+    fn test_byte_from_slice_u8_len8() {
         let byte = Byte::new(&[0u8; 0] as &[u8]).unwrap();
         assert_eq!(byte.to_hex(), "00");
 
