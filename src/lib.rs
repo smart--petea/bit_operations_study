@@ -1,5 +1,13 @@
 use core::ops::Add;
 use core::ops::Not;
+use std::ops::BitAnd;
+use std::ops::BitAndAssign;
+use std::ops::BitOr;
+use std::ops::BitOrAssign;
+use std::ops::BitXor;
+use std::ops::BitXorAssign;
+use std::cmp::PartialEq;
+use std::cmp::Eq;
 use std::result::Result;
 
 #[derive(Debug)]
@@ -345,6 +353,72 @@ impl Not for Byte {
         self
     }
 }
+
+impl BitAnd for Byte {
+    type Output = Self;
+
+    fn bitand(mut self, rhs: Self) -> Self::Output {
+        self &= rhs;
+        self
+    }
+}
+
+impl BitAndAssign for Byte {
+    fn bitand_assign(&mut self, rhs: Self) {
+        for i in 0..=7 {
+            self.inner[i] = self.inner[i] && rhs.inner[i];
+        }
+    }
+}
+
+impl BitOr for Byte {
+    type Output = Self;
+
+    fn bitor(mut self, rhs: Self) -> Self::Output {
+        self |= rhs;
+        self
+    }
+}
+
+impl BitOrAssign for Byte {
+    fn bitor_assign(&mut self, rhs: Self) {
+        for i in 0..=7 {
+            self.inner[i] = self.inner[i] || rhs.inner[i];
+        }
+    }
+}
+
+impl BitXor for Byte {
+    type Output = Self;
+
+    fn bitxor(mut self, rhs: Self) -> Self::Output {
+        self ^= rhs;
+        self
+    }
+}
+
+impl BitXorAssign for Byte {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        for i in 0..=7 {
+            self.inner[i] = !(self.inner[i] == rhs.inner[i]);
+        }
+    }
+}
+
+impl PartialEq for Byte {
+    fn eq(&self, other:&Self) -> bool {
+
+        for i in 0..=7 {
+            if self.inner[i] != other.inner[i] {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl Eq for Byte {}
 
 #[cfg(test)]
 mod tests {
@@ -700,4 +774,51 @@ mod tests {
         assert_eq!(byte.to_hex(), "00");
             */
     }
+
+    #[test]
+    fn test_byte_bitand() {
+        let a = Byte::new("10110011").unwrap();
+        let b = Byte::new("01101001").unwrap();
+
+        let a_and_b = Byte::new("00100001").unwrap();
+
+        assert_eq!(a & b, a_and_b);
+    }
+
+    #[test]
+    fn test_byte_bitor() {
+        let a = Byte::new("10110011").unwrap();
+        let b = Byte::new("01101001").unwrap();
+
+        let a_or_b = Byte::new("11111011").unwrap();
+
+        assert_eq!(a | b, a_or_b);
+    }
+
+    #[test]
+    fn test_byte_bitor_assign() {
+        let mut a = Byte::new("10110011").unwrap();
+        let b = Byte::new("01101001").unwrap();
+
+        let a_or_b = Byte::new("11111011").unwrap();
+
+        a |= b;
+        assert_eq!(a, a_or_b);
+    }
+
+    #[test]
+    fn test_byte_bitxor_assign() {
+        let mut a = Byte::new("10110011").unwrap();
+        let b = Byte::new("01101001").unwrap();
+
+        let a_xor_b = Byte::new("11011010").unwrap();
+
+        a ^= b;
+        assert_eq!(a, a_xor_b);
+    }
 }
+
+//todo 
+//1. ~ NOT (one's complement)
+//2. << (shift left)
+//3. >> (shift right)
