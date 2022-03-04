@@ -1,18 +1,26 @@
 use core::ops::Add;
+use core::ops::AddAssign;
+
 use core::ops::Not;
+
 use std::ops::BitAnd;
 use std::ops::BitAndAssign;
+
 use std::ops::BitOr;
 use std::ops::BitOrAssign;
+
 use std::ops::BitXor;
 use std::ops::BitXorAssign;
-use std::ops::Shl;
+
 use std::ops::Shr;
 use std::ops::ShrAssign;
+
+use std::ops::Shl;
+use std::ops::ShlAssign;
+
+use std::result::Result;
 use std::cmp::PartialEq;
 use std::cmp::Eq;
-use std::ops::ShlAssign;
-use std::result::Result;
 
 #[derive(Debug)]
 struct ByteNewFacade {
@@ -316,6 +324,28 @@ impl Into<u8> for Byte {
     }
 }
 
+impl AddAssign for Byte {
+    fn add_assign(&mut self, other: Self) {
+        let mut overflow = ZERO;
+        for i in 0..=7 {
+            match (self.inner[i], other.inner[i]) {
+                (ONE, ONE) => {
+                    self.inner[i] = overflow;
+                    overflow = ONE;
+                }
+                (ONE, ZERO) | (ZERO, ONE) => {
+                    self.inner[i] = !overflow;
+                    overflow = !self.inner[i];
+                }
+                _ => {
+                    self.inner[i] = overflow;
+                    overflow = ZERO;
+                }
+            }
+        }
+    }
+}
+
 impl Add for Byte {
     type Output = Self;
 
@@ -583,6 +613,44 @@ mod tests {
         assert_eq!(ByteNewFacade::validate_8bits("123456789".as_bytes()), Some("The string's length should be equal to 8".into()));
         assert_eq!(ByteNewFacade::validate_8bits("000a0000".as_bytes()), Some("String contains symbols other than 0 or 1".into()));
         assert_eq!(ByteNewFacade::validate_8bits("00010000".as_bytes()), None);
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut left = Byte::new("00000000").unwrap();
+        let right = Byte::new("00000000").unwrap();
+        left += right;
+        assert_eq!(Into::<u8>::into(left), 0u8);
+
+        let mut left = Byte::new( "00000001").unwrap();
+        let right = Byte::new("00000000").unwrap();
+        left += right;
+        assert_eq!(Into::<u8>::into(left), 1u8);
+
+        let mut left = Byte::new( "00000001").unwrap();
+        let right = Byte::new("00000001").unwrap();
+        left += right;
+        assert_eq!(Into::<u8>::into(left), 2u8);
+
+        let mut left = Byte::new( "00000011").unwrap();
+        let right = Byte::new("00000001").unwrap();
+        left += right;
+        assert_eq!(Into::<u8>::into(left), 4u8);
+
+        let mut left = Byte::new( "00000011").unwrap();
+        let right = Byte::new("00000011").unwrap();
+        left += right;
+        assert_eq!(Into::<u8>::into(left), 6u8);
+
+        let mut left = Byte::new( "00000111").unwrap();
+        let right = Byte::new("00000011").unwrap();
+        left += right;
+        assert_eq!(Into::<u8>::into(left), 10u8);
+
+        let left = Byte::new( "00000101").unwrap();
+        let right = Byte::new("00000011").unwrap();
+        let sum = left + right;
+        assert_eq!(Into::<u8>::into(sum), 8u8);
     }
 
     #[test]
