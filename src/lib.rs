@@ -391,9 +391,14 @@ impl Not for Byte {
 impl BitAnd for Byte {
     type Output = Self;
 
-    fn bitand(mut self, rhs: Self) -> Self::Output {
-        self &= rhs;
-        self
+    fn bitand(self, rhs: Self) -> Self::Output {
+        let mut byte =  Byte::new([false; 0]).unwrap();
+
+        for i in 0..=7 {
+            byte.inner[i] = self.inner[i] && rhs.inner[i];
+        }
+
+        byte
     }
 }
 
@@ -408,9 +413,13 @@ impl BitAndAssign for Byte {
 impl BitOr for Byte {
     type Output = Self;
 
-    fn bitor(mut self, rhs: Self) -> Self::Output {
-        self |= rhs;
-        self
+    fn bitor(self, rhs: Self) -> Self::Output {
+        let mut byte = Byte::new([false;0]).unwrap();
+        for i in 0..=7 {
+            byte.inner[i] = self.inner[i] || rhs.inner[i];
+        }
+
+        byte
     }
 }
 
@@ -425,9 +434,13 @@ impl BitOrAssign for Byte {
 impl BitXor for Byte {
     type Output = Self;
 
-    fn bitxor(mut self, rhs: Self) -> Self::Output {
-        self ^= rhs;
-        self
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        let mut byte = Byte::new([false;0]).unwrap();
+        for i in 0..=7 {
+            byte.inner[i] = !(self.inner[i] == rhs.inner[i]);
+        }
+
+        byte
     }
 }
 
