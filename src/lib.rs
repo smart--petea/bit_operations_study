@@ -7,6 +7,8 @@ use std::ops::BitOrAssign;
 use std::ops::BitXor;
 use std::ops::BitXorAssign;
 use std::ops::Shl;
+use std::ops::Shr;
+use std::ops::ShrAssign;
 use std::cmp::PartialEq;
 use std::cmp::Eq;
 use std::ops::ShlAssign;
@@ -404,6 +406,57 @@ impl BitXorAssign for Byte {
         for i in 0..=7 {
             self.inner[i] = !(self.inner[i] == rhs.inner[i]);
         }
+    }
+}
+
+impl ShrAssign<usize> for Byte {
+    fn shr_assign(&mut self, shift: usize) {
+         if shift == 0 {
+            return;
+        }
+
+        let shift = std::cmp::min(8, shift);
+
+        if shift == 8 {
+            self.inner = [false; 8];
+            return;
+        }
+
+        for i in 0..(8-shift) {
+            self.inner[i] = self.inner[i + shift];
+        }
+
+        for i in (8-shift)..8 {
+            self.inner[i] = false;
+        }
+    }
+}
+
+impl Shr<usize> for Byte {
+    type Output = Self;
+
+    fn shr(self, shift: usize) -> Self {
+        if shift == 0 {
+            return self;
+        }
+
+        let mut slf = self.clone();
+        let shift = std::cmp::min(8, shift);
+
+        if shift == 8 {
+            slf.inner = [false; 8];
+            return slf;
+        }
+
+        for i in 0..(8-shift) {
+            slf.inner[i] = slf.inner[i + shift];
+        }
+
+        for i in (8-shift)..8 {
+            slf.inner[i] = false;
+        }
+
+        slf
     }
 }
 
@@ -987,7 +1040,110 @@ mod tests {
         a <<= 108;
         assert_eq!(a, a_shl108);
     }
-}
 
-//todo 
-//3. >> (shift right)
+    #[test]
+    fn test_byte_shr() {
+        let a = Byte::new("10110011").unwrap();
+        let a_shl0 = Byte::new("10110011").unwrap();
+        let a = a >> 0;
+        assert_eq!(a, a_shl0);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl1 = Byte::new("01011001").unwrap();
+        let a = a >> 1;
+        assert_eq!(a, a_shl1);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl2 = Byte::new("00101100").unwrap();
+        let a = a >> 2;
+        assert_eq!(a, a_shl2);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl3 = Byte::new("00010110").unwrap();
+        let a = a >> 3;
+        assert_eq!(a, a_shl3);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl4 = Byte::new("00001011").unwrap();
+        let a = a >> 4;
+        assert_eq!(a, a_shl4);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl5 = Byte::new("00000101").unwrap();
+        let a = a >> 5;
+        assert_eq!(a, a_shl5);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl6 = Byte::new("00000010").unwrap();
+        let a = a >> 6;
+        assert_eq!(a, a_shl6);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl7 = Byte::new("00000001").unwrap();
+        let a = a >> 7;
+        assert_eq!(a, a_shl7);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl8 = Byte::new("00000000").unwrap();
+        let a = a >> 8;
+        assert_eq!(a, a_shl8);
+
+        let a = Byte::new("10110011").unwrap();
+        let a_shl108 = Byte::new("00000000").unwrap();
+        let a = a >> 108;
+        assert_eq!(a, a_shl108);
+    }
+
+    #[test]
+    fn test_byte_shr_assign() {
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl0 = Byte::new("10110011").unwrap();
+        a >>= 0;
+        assert_eq!(a, a_shl0);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl1 = Byte::new("01011001").unwrap();
+        a >>= 1;
+        assert_eq!(a, a_shl1);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl2 = Byte::new("00101100").unwrap();
+        a >>= 2;
+        assert_eq!(a, a_shl2);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl3 = Byte::new("00010110").unwrap();
+        a >>= 3;
+        assert_eq!(a, a_shl3);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl4 = Byte::new("00001011").unwrap();
+        a >>= 4;
+        assert_eq!(a, a_shl4);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl5 = Byte::new("00000101").unwrap();
+        a >>= 5;
+        assert_eq!(a, a_shl5);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl6 = Byte::new("00000010").unwrap();
+        a >>= 6;
+        assert_eq!(a, a_shl6);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl7 = Byte::new("00000001").unwrap();
+        a >>= 7;
+        assert_eq!(a, a_shl7);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl8 = Byte::new("00000000").unwrap();
+        a >>= 8;
+        assert_eq!(a, a_shl8);
+
+        let mut a = Byte::new("10110011").unwrap();
+        let a_shl108 = Byte::new("00000000").unwrap();
+        a >>= 108;
+        assert_eq!(a, a_shl108);
+    }
+}
