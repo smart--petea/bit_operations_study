@@ -23,7 +23,7 @@ use std::cmp::PartialEq;
 use std::cmp::Eq;
 
 #[derive(Debug)]
-struct ByteNewFacade {
+pub struct ByteNewFacade {
     bytes: Result<[u8; 8], String>
 }
 
@@ -125,7 +125,7 @@ impl From<[u8; 8]> for ByteNewFacade {
 } 
 
 impl From<[u8; 0]> for ByteNewFacade {
-    fn from(input: [u8; 0]) -> ByteNewFacade {
+    fn from(_: [u8; 0]) -> ByteNewFacade {
         ByteNewFacade {
             bytes: Ok([0u8; 8])
         }
