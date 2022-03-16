@@ -110,6 +110,15 @@ impl From<i8> for ByteNewFacade {
             return From::<u8>::from(i as u8);
         }
 
+        if i == -128 {
+            let mut bits_ar = [0u8; 8];
+            bits_ar[0] = 1;
+
+            return ByteNewFacade {
+                bytes: Ok(bits_ar)
+            };
+        }
+
         let mut u = (-i) as u8;
         let mut bits_vec = std::vec::Vec::new();
 
@@ -118,16 +127,18 @@ impl From<i8> for ByteNewFacade {
             u = u / 2;
         }
 
-        //todo
         let mut bits_ar = [0u8; 8];
+        for ii in 0..bits_vec.len() {
+            bits_ar[7-ii] = bits_vec[ii];
+        }
 
         let mut add = 1;
-        for ii in 0..bits_vec.len() {
-            let not = bits_vec[ii]^0;
+        for ii in 0..8 {
+            let not = bits_ar[7-ii]^1;
             match not + add {
                 2 => {
                     add = 1;
-                    bits_ar[7-ii] = 1;
+                    bits_ar[7-ii] = 0;
                 }
                 1 => {
                     add = 0;
@@ -139,7 +150,6 @@ impl From<i8> for ByteNewFacade {
                 }
             }
         }
-
 
         ByteNewFacade {
             bytes: Ok(bits_ar)
@@ -952,6 +962,7 @@ mod tests {
 
     #[test]
     fn test_byte_from_i8() {
+        /*
         let byte = Byte::new(0 as i8).unwrap();
         assert_eq!(byte.to_hex(), "00");
 
@@ -969,9 +980,22 @@ mod tests {
 
         let byte = Byte::new(0x7F as i8).unwrap(); //127
         assert_eq!(byte.to_hex(), "7F");
+        */
 
         let byte = Byte::new(-1i8).unwrap();
         assert_eq!(byte.to_hex(), "FF");
+
+        let byte = Byte::new(-2i8).unwrap();
+        assert_eq!(byte.to_hex(), "FE");
+
+        let byte = Byte::new(-3i8).unwrap();
+        assert_eq!(byte.to_hex(), "FD");
+
+        let byte = Byte::new(-127i8).unwrap();
+        assert_eq!(byte.to_hex(), "81");
+
+        let byte = Byte::new(-128i8).unwrap();
+        assert_eq!(byte.to_hex(), "80");
     }
 
     #[test]
