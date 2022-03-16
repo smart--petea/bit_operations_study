@@ -22,6 +22,8 @@ use std::result::Result;
 use std::cmp::PartialEq;
 use std::cmp::Eq;
 
+use std::cmp::Ordering;
+
 #[derive(Debug)]
 pub struct ByteNewFacade {
     bytes: Result<[u8; 8], String>
@@ -521,6 +523,19 @@ impl BitOrAssign for Byte {
     }
 }
 
+impl BitXor for &Byte {
+    type Output = Byte;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        let mut byte = Byte::new([false;0]).unwrap();
+        for i in 0..=7 {
+            byte.inner[i] = !(self.inner[i] == rhs.inner[i]);
+        }
+
+        byte
+    }
+}
+
 impl BitXor for Byte {
     type Output = Self;
 
@@ -686,6 +701,30 @@ impl PartialEq for Byte {
 }
 
 impl Eq for Byte {}
+
+impl PartialOrd for Byte {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let mut i = 0;
+        loop {
+            if self.inner[i] != other.inner[i] {
+                break;
+            }
+
+            i = i + 1;
+            if i == 8 {
+                return Some(Ordering::Equal);
+            }
+        }
+
+        for i in 0..8 {
+            if self.inner[i] < other.inner[i] {
+                return Some(Ordering::Greater);
+            }
+        }
+
+        Some(Ordering::Less)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -1188,6 +1227,17 @@ mod tests {
 
         a ^= b;
         assert_eq!(a, a_xor_b);
+    }
+
+    #[test]
+    fn test_refbyte_bitxor() {
+        let a = Byte::new("10110011").unwrap();
+        let b = Byte::new("01101001").unwrap();
+
+        let a_xor_b = Byte::new("11011010").unwrap();
+
+        let result = &a ^ &b;
+        assert_eq!(result, a_xor_b);
     }
 
     #[test]
