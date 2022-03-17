@@ -106,6 +106,33 @@ impl ByteNewFacade {
     }
 }
 
+impl From<bool> for Byte {
+    fn from(b: bool) -> Byte {
+        if b {
+            Byte::one()
+        } else {
+            Byte::empty()
+        }
+    }
+}
+
+impl From<bool> for ByteNewFacade {
+    fn from(b: bool) -> ByteNewFacade {
+        if b {
+            let mut bytes = [0u8; 8]; 
+            bytes[7] = 1;
+
+            ByteNewFacade {
+                bytes: Ok(bytes)
+            }
+        } else {
+            ByteNewFacade {
+                bytes: Ok([0u8; 8])
+            }
+        }
+    }
+}
+
 impl From<i8> for ByteNewFacade {
     fn from(mut i: i8) -> ByteNewFacade {
         if i >= 0 {
@@ -718,11 +745,11 @@ impl PartialOrd for Byte {
 
         for i in 0..8 {
             if self.inner[i] < other.inner[i] {
-                return Some(Ordering::Greater);
+                return Some(Ordering::Less);
             }
         }
 
-        Some(Ordering::Less)
+        Some(Ordering::Greater)
     }
 }
 
@@ -861,6 +888,24 @@ mod tests {
         let sum = !left.clone() + left;
 
         assert_eq!(Into::<i8>::into(sum), -1);
+    }
+
+    #[test]
+    fn test_bytenewfacade_from_bool() {
+        let byte = Byte::new(true).unwrap();
+        assert_eq!(Into::<u8>::into(byte), 1);
+
+        let byte = Byte::new(false).unwrap();
+        assert_eq!(Into::<u8>::into(byte), 0);
+    }
+
+    #[test]
+    fn test_byte_from_bool() {
+        let byte: Byte = From::<bool>::from(true);
+        assert_eq!(Into::<u8>::into(byte), 1);
+
+        let byte: Byte = From::<bool>::from(false);
+        assert_eq!(Into::<u8>::into(byte), 0);
     }
 
     #[test]
@@ -1503,5 +1548,15 @@ mod tests {
         let a_shl108 = Byte::new("00000000").unwrap();
         a = 108 << a;
         assert_eq!(a, a_shl108);
+    }
+
+    #[test]
+    fn test_byte_ordering() {
+        let a = Byte::new("10110011").unwrap();
+        let b = Byte::new("00110011").unwrap();
+
+        assert_eq!(a == a, true);
+        assert_eq!(a > b, true);
+        assert_eq!(a < b, false);
     }
 }
