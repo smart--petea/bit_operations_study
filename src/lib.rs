@@ -422,8 +422,7 @@ impl Byte {
     }
 
     pub fn one() -> Self {
-        let mut inner = [false; 8];
-        inner[0] = true;
+        let mut inner = [true; 8];
 
         Byte {
             inner: inner

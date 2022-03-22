@@ -23,7 +23,7 @@ fn bit_min(x: &bm::Byte, y: &bm::Byte) -> Result<bm::Byte, String> {
     let z: bm::Byte = x^y;
     let w: bm::Byte = From::<bool>::from(x<y);
     let w: bm::Byte = !w;
-    let result: bm::Byte = y^&(z & w);
+    let result: bm::Byte = y^&(z & !w);
 
     Ok(result)
 }
