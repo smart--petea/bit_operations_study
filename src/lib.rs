@@ -134,7 +134,7 @@ impl From<bool> for ByteNewFacade {
 }
 
 impl From<i8> for ByteNewFacade {
-    fn from(mut i: i8) -> ByteNewFacade {
+    fn from(i: i8) -> ByteNewFacade {
         if i >= 0 {
             return From::<u8>::from(i as u8);
         }
@@ -422,10 +422,8 @@ impl Byte {
     }
 
     pub fn one() -> Self {
-        let mut inner = [true; 8];
-
         Byte {
-            inner: inner
+            inner: [true; 8]
         }
     }
 }
@@ -730,25 +728,15 @@ impl Eq for Byte {}
 
 impl PartialOrd for Byte {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let mut i = 0;
-        loop {
-            if self.inner[i] != other.inner[i] {
-                break;
-            }
-
-            i = i + 1;
-            if i == 8 {
-                return Some(Ordering::Equal);
+        for i in 0..=7 {
+            match (self.inner[7-i], other.inner[7-i]) {
+                (false, true) => return Some(Ordering::Less), 
+                (true, false) => return Some(Ordering::Greater), 
+                _ => continue,
             }
         }
 
-        for i in 0..8 {
-            if self.inner[i] < other.inner[i] {
-                return Some(Ordering::Less);
-            }
-        }
-
-        Some(Ordering::Greater)
+        Some(Ordering::Equal)
     }
 }
 
@@ -901,7 +889,7 @@ mod tests {
     #[test]
     fn test_byte_from_bool() {
         let byte: Byte = From::<bool>::from(true);
-        assert_eq!(Into::<u8>::into(byte), 1);
+        assert_eq!(Into::<u8>::into(byte), 255);
 
         let byte: Byte = From::<bool>::from(false);
         assert_eq!(Into::<u8>::into(byte), 0);
@@ -1223,8 +1211,6 @@ mod tests {
     fn test_test() {
         let bnf = ByteNewFacade::from("00");
         let byte = Byte::new(bnf).unwrap();
-        println!("{:?}", byte);
-
             /*
         let byte = Byte::new("00").unwrap();
         assert_eq!(byte.to_hex(), "00");
