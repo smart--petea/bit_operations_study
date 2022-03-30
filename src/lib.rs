@@ -109,7 +109,7 @@ impl ByteNewFacade {
 impl From<bool> for Byte {
     fn from(b: bool) -> Byte {
         if b {
-            Byte::one()
+            Byte::all_ones()
         } else {
             Byte::empty()
         }
@@ -421,7 +421,7 @@ impl Byte {
         }
     }
 
-    pub fn one() -> Self {
+    pub fn all_ones() -> Self {
         Byte {
             inner: [true; 8]
         }
