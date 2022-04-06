@@ -1,10 +1,12 @@
 extern crate bit_manipulation as bm;
 
+use bm::byte::Byte;
+
 //set the kth bit
 
 fn main() {
-    let x = bm::Byte::new("01000110").unwrap();
-    let y = x | (3 << bm::Byte::all_ones());
+    let x = Byte::new("01000110").unwrap();
+    let y = x | (3 << Byte::all_ones());
 
-    assert_eq!(y, bm::Byte::new("01001110").unwrap());
+    assert_eq!(y, Byte::new("01001110").unwrap());
 }

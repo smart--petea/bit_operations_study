@@ -1,5 +1,7 @@
 extern crate bit_manipulation as bm;
 
+use bm::byte::Byte;
+
 //round up to 2 power
 //input: n
 //output: the smallest 2^x >= n
@@ -17,8 +19,11 @@ fn round_up(mut n:  u8) -> u8 {
         return 0;
     }
 
-    let n_bit = bm::Byte::new(n).unwrap();
-    let bit_one :bm::Byte = bm::Byte::new(1u8).unwrap();
+    /*
+    let n_bit: Byte = From::<u8>::from(n);
+    let bit_one Byte = bm::Byte::new(1u8).unwrap();
 
     Into::<u8>::into(n_bit + bit_one)
+    */
+    1
 }
