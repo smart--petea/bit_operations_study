@@ -12,18 +12,37 @@ use bm::byte::Byte;
 //output: 8
 
 fn main() {
+    assert_eq!(round_up(0), 0);
+
+    assert_eq!(round_up(1), 1);
+
+    assert_eq!(round_up(2), 2);
+
+    assert_eq!(round_up(3), 4);
+    assert_eq!(round_up(4), 4);
+
+    assert_eq!(round_up(5), 8);
+    assert_eq!(round_up(8), 8);
+
+    assert_eq!(round_up(9), 16);
+    assert_eq!(round_up(16), 16);
 }
 
-fn round_up(mut n:  u8) -> u8 {
+fn round_up(n: u8) -> u8 {
     if n == 0 {
         return 0;
     }
 
-    /*
-    let n_bit: Byte = From::<u8>::from(n);
-    let bit_one Byte = bm::Byte::new(1u8).unwrap();
+    let n_bit: Byte = Byte::new(n).unwrap();
+    let bit_one: Byte = Byte::new(1u8).unwrap();
 
-    Into::<u8>::into(n_bit + bit_one)
-    */
-    1
+    let mut temp: Byte = n_bit - bit_one.clone();
+    temp |= temp >> 1;
+    temp |= temp >> 2;
+    temp |= temp >> 4;
+    temp |= temp >> 8;
+
+    temp += bit_one;
+
+    Into::<u8>::into(temp)
 }

@@ -3,6 +3,9 @@ use crate::byte_new_facade::ByteNewFacade;
 use core::ops::Add;
 use core::ops::AddAssign;
 
+use core::ops::Sub;
+use core::ops::SubAssign;
+
 use core::ops::Not;
 
 use std::ops::BitAnd;
@@ -26,7 +29,7 @@ const ZERO: bool = false;
 const ONE: bool = true;
 
 //https://www.youtube.com/watch?v=ZusiKXcz_ac
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Byte {
     inner: [bool; 8] //0bit, 1bit, ..., 8bit. Changed it in order to simplify the computations
 }
@@ -158,6 +161,20 @@ impl AddAssign for Byte {
                 }
             }
         }
+    }
+}
+
+impl SubAssign for Byte {
+    fn sub_assign(&mut self, rhs: Self) {
+       std::mem::replace(self, self.clone() - rhs);
+    }
+}
+
+impl Sub for Byte {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        self + !other + Byte::new(1u8).unwrap()
     }
 }
 
@@ -1219,5 +1236,39 @@ mod tests {
 
         let byte = Byte::new(false).unwrap();
         assert_eq!(Into::<u8>::into(byte), 0);
+    }
+
+    #[test]
+    fn test_byte_sub() {
+        let one = Byte::new(1u8).unwrap();
+        let result = one.clone() - one;
+        assert_eq!(Into::<u8>::into(result), 0);
+
+        let one = Byte::new(1u8).unwrap();
+        let two = Byte::new(2u8).unwrap();
+        let result = two - one;
+        assert_eq!(Into::<u8>::into(result), 1);
+
+        let seventy = Byte::new(70u8).unwrap();
+        let fifty = Byte::new(50u8).unwrap();
+        let result = seventy - fifty;
+        assert_eq!(Into::<u8>::into(result), 20);
+    }
+
+    #[test]
+    fn test_byte_sub_assign() {
+        let mut one = Byte::new(1u8).unwrap();
+        one -= one.clone();
+        assert_eq!(Into::<u8>::into(one), 0);
+
+        let one = Byte::new(1u8).unwrap();
+        let mut result = Byte::new(2u8).unwrap();
+        result -= one;
+        assert_eq!(Into::<u8>::into(result), 1);
+
+        let mut result = Byte::new(70u8).unwrap();
+        let fifty = Byte::new(50u8).unwrap();
+        result -= fifty;
+        assert_eq!(Into::<u8>::into(result), 20);
     }
 }
