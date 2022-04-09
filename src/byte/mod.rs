@@ -7,6 +7,7 @@ use core::ops::Sub;
 use core::ops::SubAssign;
 
 use core::ops::Not;
+use core::ops::Neg;
 
 use std::ops::BitAnd;
 use std::ops::BitAndAssign;
@@ -205,6 +206,14 @@ impl Add for Byte {
         Self {
             inner: sum
         }
+    }
+}
+
+impl Neg for Byte {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        !self + Byte::new(1u8).unwrap()
     }
 }
 
@@ -1270,5 +1279,24 @@ mod tests {
         let fifty = Byte::new(50u8).unwrap();
         result -= fifty;
         assert_eq!(Into::<u8>::into(result), 20);
+    }
+
+    #[test]
+    fn test_byte_neg() {
+        let mut one = Byte::new(1i8).unwrap();
+        one = -one;
+        assert_eq!(Into::<i8>::into(one), -1);
+
+        let mut two = Byte::new(2i8).unwrap();
+        two = -two;
+        assert_eq!(Into::<i8>::into(two), -2);
+
+        let mut n127 = Byte::new(127i8).unwrap();
+        n127 = -n127;
+        assert_eq!(Into::<i8>::into(n127), -127i8);
+
+        let mut n127 = Byte::new(-127i8).unwrap();
+        n127 = -n127;
+        assert_eq!(Into::<i8>::into(n127), 127i8);
     }
 }
